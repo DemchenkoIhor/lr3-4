@@ -1,0 +1,12 @@
+body {
+    background: url(./img/what-the-hex.png);
+}
+.item {
+    padding: 10px;
+    font-size: 20px;
+    margin: 10px;
+    background: white;
+    box-shadow: 3px 0 10px rgba(0, 0, 0, 0.336);
+    width: 300px;
+    height: 500px;
+}

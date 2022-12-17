@@ -1,4 +1,4 @@
-const mysql = require('mysql2');
+const mysql = require('mysql');
 const express = require("express");
 const app = express();
 
@@ -7,12 +7,11 @@ const urlencodedParser = express.urlencoded({ extended: false });
 app.set("view engine", "hbs");
 
 
-
 // зміна, в якій зберігаються дані для підключення до БД 
 var bd = mysql.createConnection({
   host: "localhost",
   user: "root",
-  database: "cm",
+  database: "ecomon",
   password: "sql1234",
   multipleStatements: true
 });
@@ -28,103 +27,102 @@ bd.connect(function (err) {
 });
 
 app.get("/", function (req, res) {
+  res.render("index.hbs");
+});
 
- 
 
-  bd.query("SELECT * FROM task3; SELECT * FROM object order by name", function (err, data) {
+app.get("/carcin", function(req, res){
+  bd.query("Select * from carcin;", function (err, data) {
     if (err) return console.log(err);
+    res.render("carcin.hbs", {
+      select_substances: data    });
 
-    res.render("index.hbs", {
-      objects: data[1],
-      object_select: data[1],
-      substances: [
-        { classDeng: "I", tax: 1546.22 },
-        { classDeng: "II", tax: 56.32 },
-        { classDeng: "III", tax: 14.12 },
-        { classDeng: "IV", tax: 5.50 },
-        { classDeng: "V", tax: 0.54 },
-      ],
-      nuclear: [
-        { classDeng: "низькоактивних і середньоактивних", tax: 2 },
-        { classDeng: "високоактивних", tax: 50 }
-      ],
-      nuclearStorage: [
-        { classDeng: "низькоактивних і середньоактивних", tax: 0.01180740 },
-        { classDeng: "високоактивних", tax: 0.63253966 },
-        { classDeng: "низькоактивних і середньоактивних, як джерело іонізуючого випромінювання", tax: 4216.92 },
-        { classDeng: "високоактивних, як джерело іонізуючого випромінювання", tax: 21084.66 }
-      ],
-      
-    });
+    //console.log(data);
+    
   });
-});
+})
 
-app.post("/", urlencodedParser, function (req, res) {
+app.post("/carcinAmount", urlencodedParser, function (req, res) {
+
   if (!req.body) return res.sendStatus(400);
-  const subst = req.body.subst;
-
-  const classDenger = req.body.classDenger;
-
-  const amount = req.body.amount;
-
-  const dengEnv = req.body.dengEnv;
-
-  const nearCity = req.body.nearCity;
-
-  const tax = classDenger * amount * dengEnv * nearCity;
-  res.render("index.hbs", {
-    result1:tax
-    //countTax: 'Вартість розміщення ' + subst + ' у розмірі ' + amount + 'т. становить ' + tax + ' грн.'
-
+  //console.log(req.body);
+  //console.log((((req.body.Ca * req.body.Tout * req.body.Vout)+(req.body.Ch * req.body.Tin * req.body.Vin))* req.body.EF * req.body.ED)/(req.body.BM*req.body.AT*365)*req.body.form_select_nameSubs);
+ const status_emiss =Number((((req.body.Ca * req.body.Tout * req.body.Vout)+(req.body.Ch * req.body.Tin * req.body.Vin))* req.body.EF * req.body.ED)/(req.body.BM*req.body.AT*365)*req.body.form_select_nameSubs);
+ var data1, data2, data3, data4;
+ console.log(status_emiss);
+ data1={ text: "", visibility: "none"};
+ data2={ text: "", visibility: "none"};
+ data3={ text: "", visibility: "none"};
+ data4={ text: "", visibility: "none"};
+ if(status_emiss>0.001){
+   data1.text = "Високий (De Manifestis) - не прийнятний для виробничих умов і населення. Необхідне здійснення заходів з усунення або зниження ризику ";
+   data1.visibility = "block";
+ }
+ else if(status_emiss>=0.001 && status_emiss <=0.0001){
+  data2.text = "Середній - припустимий для виробничих умов; за впливу на все населення необхідний динамічний контроль і поглиблене вивчення джерел і можливих наслідків шкідливих впливів для вирішення питання про заходи з управління ризиком";
+  data2.visibility = "block";
+ }
+ else if(status_emiss >=0.0001 && status_emiss <=0.000001){
+  data3.text = "Низький - припустимий ризик (рівень, на якому, як правило, встановлюються гігієнічні нормативи для населення)   ";
+  data3.visibility = "block";
+ }
+ else{
+  data4.text = "Мінімальний - бажана (цільова) величина ризику при проведенні оздоровчих і природоохоронних заходів";
+  data4.visibility = "block";
+ }
+  res.render("CarcinAmount.hbs", {
+    koef: status_emiss.toFixed(3),
+    data1: data1,
+    data2: data2,
+    data3: data3,
+    data4: data4
+    
   });
+
 });
 
-app.post("/TaxNuclear", urlencodedParser, function (req, res) {
+app.get("/noncarcin", function(req, res){
+  bd.query("Select * from noncarcin;", function (err, data) {
+    if (err) return console.log(err);
+    res.render("noncarcin.hbs", {
+      select_substances: data    });
+
+    //console.log(data);
+    
+  });
+})
+
+app.post("/nonCarcinAmount", urlencodedParser, function (req, res) {
+
   if (!req.body) return res.sendStatus(400);
-  const Obs = req.body.Obs;
-  const H = 0.0133;
-  const pnc = 2;
-  const pv = 50;
-  const C1nc = req.body.C1nc;
-  const C1v = req.body.C1v;
-  const C2nc = req.body.C2nc;
-  const C2v = req.body.C2v;
-  const V1nc = req.body.V1nc;
-  const V1v = req.body.V1v;
-  const V2nc = req.body.V2nc;
-  const V2v = req.body.V2v;
-  const tax = (Obs * H) + (pnc * C1nc * V1nc) + (pv * C1v * V1v) + 0.03125 * ((pnc * C2nc * V2nc) + (pv * C2v * V2v));
-  console.log(tax);
-  res.render("NuclearCreat.hbs", {
-
-    countTax: 'Вартість розміщення  становить ' + tax + ' грн.'
-
+  //console.log(req.body);
+  //console.log(req.body.C/req.body.form_select_nameSubs);
+ const status_emiss =Number(req.body.C/req.body.form_select_nameSubs);
+ let data1, data2, data3;
+ data1={ text: "", visibility: "none"};
+ data2={ text: "", visibility: "none"};
+ data3={ text: "", visibility: "none"};
+ if(status_emiss<1){
+   data1.text = "Ризик виникнення шкідливих ефектів розглядають як зневажливо малий";
+   data1.visibility = "block";
+ }
+ else if(status_emiss==0.001){
+  data2.text = "Гранична величина, що не потребує термінових заходів, однак не може розглядатися як досить прийнятна";
+  data2.visibility = "block";
+ }
+ else if(status_emiss >1 ){
+  data3.text = "Висока імовірність розвитку шкідливих ефектів, потрібно негайно вжити заходів з усунення або зниження ризику";
+  data3.visibility = "block";
+ }
+ 
+  res.render("nonCarcinAmount.hbs", {
+    koef: status_emiss.toFixed(3),
+    data1: data1,
+    data2: data2,
+    data3: data3
   });
+
 });
-
-
-app.post("/TaxNuclearStorage", urlencodedParser, function (req, res) {
-  if (!req.body) return res.sendStatus(400);
-
-
-  const classDenger = req.body.classDenger;
-
-  const amount = req.body.amount;
-
-  const time = req.body.time;
-
-  const tax = classDenger * amount * time;
-  res.render("nuclearStorage.hbs", {
-
-    countTax: 'Вартість розміщення становить ' + tax + ' грн.'
-
-  });
-});
-
-
-
-
-
 
 const port = 3000;
 
